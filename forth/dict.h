@@ -106,8 +106,8 @@ wordNotFound:
 ; This will be pointed to at all non-primitive definitions end
 ; and will return to previous routine or back to prompt
 forthretcode:
-	pop IY
-	jp ixrethere
+
+	jp (IX)
 
 ; Here is the chained dictionary for all primitive words for now
 
@@ -151,17 +151,6 @@ testfncode:
 	.dw dupcode
 	.dw forthretcode
 testfnend:
-
-testfn2:
-	.dw testfn2end
-	.db "TESTFN2", 0
-testfn2code:
-	jp (HL)
-	.dw dupcode
-	.dw dupcode
-	.dw testfncode
-	.dw forthretcode
-testfn2end:
 
 
 ; When searching the dictionary, this is the last element
