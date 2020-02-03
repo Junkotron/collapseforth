@@ -173,6 +173,9 @@ static void run_prompt_once(Machine *m)
       }
     case 'c':
       {
+	/* Step passed current op */
+	execute(m);
+	
 	int flag=0;
 	while (1)
 	  {

@@ -12,6 +12,8 @@ dictstart:
 	.dw 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.dw 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
+
+
 ; System variables, user dictionary starts empty, stack starts at that point
 ; and is relocated as data is added to the dictionary
 stackstart: 
@@ -31,7 +33,7 @@ evalForth:
 nextInstr:
 
 	; a primitive function returns to
-	; this address
+	; the primfunc address
 	ld IX, primfunc
 
 	ld H,(IY+1)
@@ -40,7 +42,12 @@ nextInstr:
 	inc IY
 	inc IY
 	push IY
-	jp (HL)
+
+	push HL
+	pop IY
+	ld HL,evalForth
+
+	jp (IY)
 
 primfunc:
 	; OK take next IY
@@ -106,8 +113,8 @@ wordNotFound:
 ; This will be pointed to at all non-primitive definitions end
 ; and will return to previous routine or back to prompt
 forthretcode:
-
-	jp (IX)
+	pop IY
+	jp ixrethere
 
 ; Here is the chained dictionary for all primitive words for now
 
@@ -151,6 +158,17 @@ testfncode:
 	.dw dupcode
 	.dw forthretcode
 testfnend:
+
+testfn2:
+	.dw testfn2end
+	.db "TESTFN2", 0
+testfn2code:
+	jp (HL)
+	.dw dupcode
+	.dw dupcode
+	.dw testfncode
+	.dw forthretcode
+testfn2end:
 
 
 ; When searching the dictionary, this is the last element

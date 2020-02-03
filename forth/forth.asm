@@ -8,12 +8,12 @@
 	; This is just instead of a list file in the assembly which zasm
 	; does not have apperently :-(
 	.dw evalForth
-	.dw forthretcode
-	.dw testfn
+	.dw testfn2code
 	
 ; TODO: this is better in a separate .asm file prolly
 .inc "dict.h"
 
+blaha:
 	ret
 
 	
