@@ -1,5 +1,6 @@
 .inc "user.h"
 
+; At hex 4200 normally
 .org USER_CODE
 
         jp start
@@ -7,9 +8,12 @@
 .dbg:
 	; This is just instead of a list file in the assembly which zasm
 	; does not have apperently :-(
+	; .dw myLabel
+	.dw forthretcodedbg
 	.dw evalForth
-	.dw testfn2code
-	
+	.dw evalPrimitive
+	.dw evalSofist
+
 ; TODO: this is better in a separate .asm file prolly
 .inc "dict.h"
 
@@ -84,19 +88,11 @@ notFoundError:
 	jr forever
 
 doeval:
-	; Now prepare all registers
-	ld      IX,ixrethere
-	inc     HL
-	push	HL
-	pop     IY	; IY now contains address to the function definition
-			; In the primitive case, jp (IY) just executes there
-			; whilst in the non-prim functions we immediately
-			; do an jp (HL) to an eval function
-	ld	HL,evalForth
+	inc     HL	; HL now contains address to the function definition
+			; This is the pointer to the tag field
+	call	evalForth
+	pop	HL
 
-	jp	(IY)
-ixrethere:
-	pop     HL
 	; Done with this word, now we skip it and take on the next
 skipword:
 
@@ -105,6 +101,53 @@ skipword:
 	xor	a		; success
 	ret
 
+evalForth:
+	ld	D,0
+	ld 	A,(HL)
+	add	A,A      ; Double up
+	ld 	E,A
+	ld	IY, evalJmpTable
+	add	IY,DE
+	ld	B,(IY+1)
+	ld	C,(IY)
+	push	BC
+	pop	IY
+	inc	HL	; Make HL point to actual code or word links
+	jp (IY)
+
+
+evalPrimitive:
+	ld	IX, ixrethere
+	jp	(HL)
+ixrethere:
+	ret
+
+evalSofist:
+	; This is a simple loop over a set of pointers in the word we
+	; are evaluating
+	ld    C,(HL)
+	inc   HL
+	ld    B,(HL)
+	inc   HL
+	push hl
+	push bc
+	pop hl
+	call evalForth
+	pop hl
+	jr evalSofist
+
+; Cheat us into a forth function with special code to end a set of pointers
+forthretcode:
+	.db 0
+forthretcodedbg:
+	; Just eat our own call and return
+	pop hl
+	pop hl
+	ret
+
+evalJmpTable:
+	.dw evalPrimitive
+	.dw evalSofist ; A non-primitive routine is of course "sofisticated" :-)
 
 
 sBanner:

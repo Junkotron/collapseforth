@@ -20,40 +20,6 @@ stackstart:
 dictend: 
 	 .dw dictstart
 
-; Here are some hidden routines
-
-evalForth:
-	; TODO: This will be jumped to from the jp (HL) in all non-prim
-	; functions, we shall start to call each function contained
-	; in this functions body and then further down etc.
-	inc IY
-	; IY now points to the
-	; function we are to evaluate
-
-nextInstr:
-
-	; a primitive function returns to
-	; the primfunc address
-	ld IX, primfunc
-
-	ld H,(IY+1)
-	ld L,(IY)
-
-	inc IY
-	inc IY
-	push IY
-
-	push HL
-	pop IY
-	ld HL,evalForth
-
-	jp (IY)
-
-primfunc:
-	; OK take next IY
-	pop IY
-	jr nextInstr
-
 dictLookup:
 	; This routine will search for string pointed to by DE and length in C
 	ld      HL,firstword
@@ -110,11 +76,6 @@ nextword:
 wordNotFound:
 	ret
 
-; This will be pointed to at all non-primitive definitions end
-; and will return to previous routine or back to prompt
-forthretcode:
-	pop IY
-	jp ixrethere
 
 ; Here is the chained dictionary for all primitive words for now
 
@@ -125,6 +86,7 @@ dup:
 	.dw dupend  ; next
 	.db "DUP", 0
 dupcode:
+	.dw 0		       
 	; TODO: Do some manipulations on the forth stack (also todo)
 	ld HL,dupdbg
 	call printstr
@@ -137,6 +99,7 @@ drop:
 	.dw dropend  ; next
 	.db "DROP", 0
 dropcode:
+	.dw 0		       
 	; TODO: Do some manipulations on the forth stack (also todo)
 	ld HL,dropdbg
 	call printstr
@@ -153,7 +116,7 @@ testfn:
 	.dw testfnend
 	.db "TESTFN", 0
 testfncode:
-	jp (HL)
+	.db 1
 	.dw dupcode
 	.dw dupcode
 	.dw forthretcode
@@ -163,7 +126,7 @@ testfn2:
 	.dw testfn2end
 	.db "TESTFN2", 0
 testfn2code:
-	jp (HL)
+	.db 1
 	.dw dupcode
 	.dw dupcode
 	.dw testfncode
