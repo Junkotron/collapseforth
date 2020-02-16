@@ -9,10 +9,7 @@
 	; This is just instead of a list file in the assembly which zasm
 	; does not have apperently :-(
 	; .dw myLabel
-	.dw forthretcodedbg
-	.dw evalForth
-	.dw evalPrimitive
-	.dw evalSofist
+	.dw dotcode+1
 
 ; TODO: this is better in a separate .asm file prolly
 .inc "dict.h"
