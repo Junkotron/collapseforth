@@ -1,0 +1,1 @@
+cat opcodes.lst_orig | grep -v IXh | grep -v IXl | grep -v IYh | grep -v IYl | grep -v DJNZ  | grep -v "IN " | grep -v "JP " | grep -v "JR " | grep -v ",RES" | grep -v ",SET" | grep -v ",BIT" | grep -v ",RL" | grep -v ",RR" | grep -v ",SL" | grep -v ",SR" > opcodes.lst
