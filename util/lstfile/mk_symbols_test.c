@@ -2,14 +2,37 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "mk_symbols.h"
 
-static const int debug=1;
+static const int debug=0;
 
 // To be parsed from opcodes.lst
 static char opc[2000][100];
 
+// Trim nl
+static void trim(char* str)
+{
+  int i;
+  for (i=0;;i++)
+    {
+      if (str[i] == '\r')
+	{
+	  str[i]='\0';
+	  return;
+	}
+      if (str[i] == '\n')
+	{
+	  str[i]='\0';
+	  return;
+	}
+      if (str[i] == '\0')
+	{
+	  return;
+	}
+    }
+}
 
 int main()
 {
@@ -55,5 +78,45 @@ int main()
       if (debug) printf("opcodename=%s, opcodelen=%d\n", opcname, opcnamelen);
       if (debug) printf("op1=%s, op1len=%d\n", op1, op1len);
       if (debug) printf("op2=%s, op2len=%d\n", op2, op2len);
+
+      // Ok, make this into a string and compare with the original
+      char back[1024];
+      char b1[1024];
+      char b2[1024];
+      char orig[1024];
+
+      back[0]='\0';
+      b1[0]='\0';
+      b2[0]='\0';
+      orig[0]='\0';
+
+      sprintf(back, "%s", opcname);
+      if (op1[0]!='\0')
+	{
+	  sprintf(b1, "%s %s", back, op1);
+	}
+      else
+	{
+	  sprintf(b1, "%s", back);
+	}
+      if (op2[0]!='\0')
+	{
+	  sprintf(b2, "%s,%s", b1, op2);
+	}
+      else
+	{
+	  sprintf(b2, "%s", b1);	      
+	}
+
+      sprintf(orig, "%s", &opc[i][11]);
+
+      trim(b2);
+      trim(orig);
+      
+      if (strcmp(b2, orig))
+	{
+	  printf("Test Failed: >>>%s<<< original= >>>%s<<<\n", b2, orig);
+	}
+
     }
 }

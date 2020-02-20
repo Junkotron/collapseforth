@@ -5,7 +5,7 @@
 
 #include "mk_symbols.h"
 
-static const int debug=1;
+static const int debug=0;
 
 // To be parsed from opcodes.lst
 static char opc[2000][100];
@@ -162,7 +162,10 @@ void convert_if_pos_n_or_nn(char* op, char* opcname)
 	}
       else
 	{
-	  sprintf(op, "(nn)");	  
+	  if (!is_any_of(op, regs))
+	    {
+	      sprintf(op, "(nn)");
+	    }
 	}
     }
 }
@@ -192,7 +195,8 @@ void convert_if_arithmetic_n(char* op1, char* op2, char* opcname)
 			"SBC",
 			"SUB",
 			""};
-    
+
+  // Return if anything but A
   if (strcmp(op1,"A")) return;
 
   if (is_any_of(opcname, ops) && is_not_reg8(op2))
@@ -274,24 +278,24 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
 	}
     }
 
-  if (debug) printf("op1=%s\n", op1);
-  if (debug) printf("op2=%s\n", op2);
+  if (debug) printf("1) op1=%s\n", op1);
+  if (debug) printf("1) op2=%s\n", op2);
   
   // Now check for the (nn) or (n) construct in both arguments, only "IN"
   // and "OUT" has (n) all others are (nn)
   convert_if_pos_n_or_nn(op1, opcname);
   convert_if_pos_n_or_nn(op2, opcname);
 
-  if (debug) printf("op1=%s\n", op1);
-  if (debug) printf("op2=%s\n", op2);
+  if (debug) printf("2) op1=%s\n", op1);
+  if (debug) printf("2) op2=%s\n", op2);
 
   // Now a set of [A,]n opcodes are always n, not nn
   // if any of ADC, ADD, AND, CP, OR, SBC, SUB, XOR
   convert_if_acc_with_n(op1, opcname);
   convert_if_arithmetic_n(op1, op2, opcname);
   
-  if (debug) printf("op1=%s\n", op1);
-  if (debug) printf("op2=%s\n", op2);
+  if (debug) printf("3) op1=%s\n", op1);
+  if (debug) printf("3) op2=%s\n", op2);
   // Now for the final peculiarity, is any literal number argument n or nn?
   // for the notorious "LD" opcode, "n", it is if the other opcode is any of
   // ABCDEHL (HL) (DE) (BC) (IX+d) (IY+d)
