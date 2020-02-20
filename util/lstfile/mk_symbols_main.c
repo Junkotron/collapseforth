@@ -13,7 +13,7 @@ static char opc[2000][100];
 
 int main()
 {
-  FILE* opcf = fopen("libz80/codegen/opcodes.lst", "r");
+  FILE* opcf = fopen("opcodes.lst", "r");
 
   int i=0;
   
