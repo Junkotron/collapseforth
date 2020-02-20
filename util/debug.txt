@@ -1,0 +1,27 @@
+
+It seems the user code will end up at hex 4200 so we will just set a breakpoint
+there, new "-g" flag will start up in debugger at address 0
+i.e.
+
+myuser@mymachine$ shell/shell -g
+Initializing filesystem from cfsin
+ JP (nn)
+0000 c3 bf 0e 
+Prompt> b 4200            <==== Set breakpoint at USER_CODE (hex 4200)
+Setting breakpoint 0 at 4200
+ JP (nn)
+0000 c3 bf 0e 
+Prompt> c                 <==== Continue execution until breakpoint
+Collapse OS
+> hello.bin               <==== Type this in to start program
+ LD HL,nn                 <==== This is the "ld hl, sAwesome" in hello.asm
+4200 21 08 42 
+Prompt> n                 <==== Next instruction
+ CALL (nn)
+4203 cd 3f 00 
+Prompt> n                 <==== Next instruction (again)
+Assembled from the shell  *** Here is the printout from program ***
+ XOR A
+4206 af 
+Prompt> 
+
