@@ -20,7 +20,7 @@ int is_ws(char ch)
 	   (ch=='\r') ||
 	   (ch=='\0')
 	   );
-}
+  }
 
 int is_ws_or_comma(char ch)
 {
@@ -89,7 +89,25 @@ int is_any_of(char* str, const char *lst[])
     }
   return 0;
 }
+
+int is_weird(char* opc, char* op1, char* op2)
+{
+  const char* ixyhl[]={"IXh","IXl","IYh","IYl","",};
+  if (is_any_of(op1, ixyhl)) return 1;
+  if (is_any_of(op2, ixyhl)) return 1;
+
+  const char* bitstuff[]={"RES","SET","RLC","RRC","RL","RR","SRL","SLL","SLA","SRA",""};
+
+  // silly LD A,RES ...
+  if (is_any_of(op2, bitstuff))
+    {
+      return 1;
+    }
   
+  return 0;
+  
+}
+
 void convert_if_index(char* pek)
 {
   if (0==strncmp(pek, "(IX", 3))
@@ -102,7 +120,7 @@ void convert_if_index(char* pek)
     }
 }
 
-void convert_to_upper(char* pek)
+void convert_to_upper_ifnotn(char* pek)
 {
   int i=0;
 
@@ -111,6 +129,18 @@ void convert_to_upper(char* pek)
       pek[i]=toupper(pek[i]);
       i++;
     }
+
+  if (0==strcmp("N",pek))
+    {
+      sprintf(pek, "n");
+    }
+    
+  if (0==strcmp("NN",pek))
+    {
+      sprintf(pek, "nn");
+    }
+    
+  
 }
 
  
@@ -150,15 +180,20 @@ void convert_if_pos_n_or_nn(char* op, char* opcname)
   // if recognizable reg we return directly
   static const char* regs[]={
     "A", "B", "C", "D", "E", "H", "L",
+    "(C)", "(IX)", "(IY)",
     "BC", "DE", "HL", "SP", "IX", "IY", 
     "(BC)", "(DE)", "(HL)", "(SP)", "(IX+d)", "(IY+d)", 
+
     ""
   };
   if (op[0] == '(')
     {
       if (is_in_or_out(opcname))
 	{
-	  sprintf(op, "(n)");
+	  if (!is_any_of(op, regs))
+	    {
+	      sprintf(op, "(n)");
+	    }
 	}
       else
 	{
@@ -226,8 +261,20 @@ void convert_if_numeral(char* op1, char* op2, char* opcname)
     }
 }
 
+void fix_if_djnzjr(char *opcname,char *op1,char *op2)
+{
+  if (0==strcmp(opcname,"JR") ||
+      0==strcmp(opcname,"DJNZ")
+      )
+    {
+      if (op2[0]=='\0') sprintf(op1, "(PC+e)");
+      else
+	sprintf(op2, "(PC+e)");
+    }
+}
+
 void parse_line(char* linebuff, char* labelname, char* opcname,
-		       char* op1, char* op2)
+		char* op1, char* op2)
 {
 
   char *pek=linebuff;
@@ -249,17 +296,36 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
 
   pek=copy_to_spc(op2, pek);
 
+  // eliminate weird "extra" mnems
+  if (is_weird(opcname, op1, op2))
+    {
 
+      // just dump all in opcname
+      sprintf(opcname, "%s", &linebuff[1]);
+      op1="";
+      op2="";
+      return;
+    }
+  
   // Convert mnem and operands to upper case, labels are kept case-sensitive
-  convert_to_upper(opcname);
-  convert_to_upper(op1);
-  convert_to_upper(op2);
+  convert_to_upper_ifnotn(opcname);
+  convert_to_upper_ifnotn(op1);
+  convert_to_upper_ifnotn(op2);
   
   // Now lets do some special conversions, first turn any op begining
   // with (IX/IY... into (IX/IY+d)
 
-  convert_if_index(op1);
-  convert_if_index(op2);
+  if (strcmp("JP",opcname))
+    {
+      convert_if_index(op1);
+      convert_if_index(op2);
+    }
+  else
+    {
+      convert_if_pos_n_or_nn(op1, opcname);
+      convert_if_pos_n_or_nn(op2, opcname);
+      return;
+    }
 
   // Now lets deal with the silly jr and djnz
   // Just check if op1 is "C/NC/Z/NZ", ignore that djnz does not take flag
@@ -286,6 +352,8 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
   convert_if_pos_n_or_nn(op1, opcname);
   convert_if_pos_n_or_nn(op2, opcname);
 
+  if (is_in_or_out(opcname)) return;
+
   if (debug) printf("2) op1=%s\n", op1);
   if (debug) printf("2) op2=%s\n", op2);
 
@@ -296,11 +364,7 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
   
   if (debug) printf("3) op1=%s\n", op1);
   if (debug) printf("3) op2=%s\n", op2);
-  // Now for the final peculiarity, is any literal number argument n or nn?
-  // for the notorious "LD" opcode, "n", it is if the other opcode is any of
-  // ABCDEHL (HL) (DE) (BC) (IX+d) (IY+d)
-  convert_if_numeral(op1, op2, opcname);
 
-  
+  fix_if_djnzjr(opcname,op1,op2);
 }
 
