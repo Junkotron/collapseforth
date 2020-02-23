@@ -10,6 +10,31 @@ static const int debug=1;
 // To be parsed from opcodes.lst
 static char opc[2000][100];
 
+static int calc_score(char* linebuff)
+{
+  // Parse the first columns to determine number of bytes taken
+  int score=0;
+  int i;
+  
+  for (i=0;i<11;i++)
+    {
+      // 0..9 A..F scores one point a..z scores two points
+      // result is divided by two to get # bytes in this mnemonic
+      char ch = linebuff[i];
+
+      if ( (ch >= '0' && ch <= '9') || (ch>='A' && ch <='F') )
+	{
+	  score++;
+	}
+
+      if (ch >= 'a' && ch <= 'z')
+	{
+	  score += 2;
+	}
+    }
+  return score/2;
+}
+
 
 int main()
 {
@@ -40,7 +65,28 @@ int main()
       opcname[0]='\0';
       op1[0]='\0';
       op2[0]='\0';
-            
+
+      // Set a null at a semi-colon, terminating line
+      int quote_on=0;
+      int i;
+      for (i=0;;i++)
+	{
+	  if (linebuf[i]=='\0') break;
+	  
+	  if (quote_on==0)
+	    {
+	      if (linebuf[i]==';')
+		{
+		  linebuf[i]='\0';
+		  break;
+		}
+	    }
+	  if (linebuf[i]=='"')
+	    {
+	      quote_on = !quote_on;
+	    }
+	}
+
       parse_line(linebuf, labelname, opcname, op1, op2);
 
       // These lenghts are without spaces and with numbers converted to "X"
@@ -54,14 +100,20 @@ int main()
       if (debug) printf("op1=%s, op1len=%d\n", op1, op1len);
       if (debug) printf("op2=%s, op2len=%d\n", op2, op2len);
 
-      // Search all >1000 entries for each line, we are not yet at collapse :-)
-      for (i=0;i<lim;i++)
+      // TODO: If label!="" set symbol value to current pc ($) and dump to lst file
+      
+      if (opcname[0] != '\0')
 	{
-	  if (0==strncmp(opcname, &opc[i][11], opcnamelen))
+	  
+	  // Search all >1000 entries for each line, we are not yet at collapse :-)
+	  for (i=0;i<lim;i++)
 	    {
-	      // Match?
-	      if (debug) printf("i match=%d, str=%s\n", i, &opc[i][11]);
-	      break;
+	      if (0==strncmp(opcname, &opc[i][11], opcnamelen))
+		{
+		  // Match?
+		  if (debug) printf("i match=%d, str=%s\n", i, &opc[i][11]);
+		  break;
+		}
 	    }
 	}
     }

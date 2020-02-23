@@ -274,11 +274,11 @@ void fix_if_djnzjr(char *opcname,char *op1,char *op2)
 }
 
 void parse_line(char* linebuff, char* labelname, char* opcname,
-		char* op1, char* op2)
+	       char* op1, char* op2)
 {
 
   char *pek=linebuff;
-  
+
   if (!is_ws(pek[0]))
     {
       pek=copy_to_spc(labelname, pek);
@@ -296,10 +296,11 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
 
   pek=copy_to_spc(op2, pek);
 
+  if (opcname[0]='\0') return;
+  
   // eliminate weird "extra" mnems
   if (is_weird(opcname, op1, op2))
     {
-
       // just dump all in opcname
       sprintf(opcname, "%s", &linebuff[1]);
       op1="";
@@ -366,5 +367,7 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
   if (debug) printf("3) op2=%s\n", op2);
 
   fix_if_djnzjr(opcname,op1,op2);
+
+  return;
 }
 
