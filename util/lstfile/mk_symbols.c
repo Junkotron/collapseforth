@@ -5,7 +5,7 @@
 
 #include "mk_symbols.h"
 
-static const int debug=0;
+static const int debug=1;
 
 // To be parsed from opcodes.lst
 static char opc[2000][100];
@@ -245,17 +245,33 @@ void convert_if_numeral(char* op1, char* op2, char* opcname)
 {
   static const char *nreg[]={"A", "B","C", "D","E", "H", "L",
 			     "(BC)", "(DE)", "(HL)", "(SP)",
-			     "(IX+d)", "(IY+d)",
+			     "(IX+d)", "(IY+d)", "I", "R",
 			     ""};
-  
+
+  static const char *r16[]={"BC", "DE","HL", "SP", "IX", "IY",
+			     ""};
+
   // only do stuff for the LD mnem
   if (strcmp(opcname, "LD")) return;
+
+  // Anything pos (xx) already handled
+  if (op1[0]=='(') return;
+  if (op2[0]=='(') return;
 
   // no changes if any op is (nn)
   if (!strcmp(op1, "(nn)")) return;
   if (!strcmp(op2, "(nn)")) return;
+
+  if (is_any_of(op1, r16))
+    {
+      if (!is_any_of(op2, r16))
+	{
+	  sprintf(op2, "nn");
+	}
+	  return;      
+    }
   
-  if (!is_any_of(op1, nreg))
+  if (!is_any_of(op2, nreg))
     {
       sprintf(op2, "n");
     }
@@ -267,7 +283,8 @@ void fix_if_djnzjr(char *opcname,char *op1,char *op2)
       0==strcmp(opcname,"DJNZ")
       )
     {
-      if (op2[0]=='\0') sprintf(op1, "(PC+e)");
+      if (op2[0]=='\0')
+	sprintf(op1, "(PC+e)");
       else
 	sprintf(op2, "(PC+e)");
     }
@@ -295,10 +312,12 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
   pek=move_to_nonws(pek);
 
   pek=copy_to_spc(op2, pek);
-
-  if (opcname[0]='\0') return;
+   
+  if (opcname[0]=='\0') return;
   
-  // eliminate weird "extra" mnems
+  // eliminate weird "extra" mnems, we just assume this is a part of the
+  // testing of the full opcode table and do not care to do any conversion
+  // as we would if this was a sane opcode such as "ld a,(xzyz-32)"
   if (is_weird(opcname, op1, op2))
     {
       // just dump all in opcname
@@ -365,6 +384,11 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
   
   if (debug) printf("3) op1=%s\n", op1);
   if (debug) printf("3) op2=%s\n", op2);
+
+  convert_if_numeral(op1, op2, opcname);
+  
+  if (debug) printf("4) op1=%s\n", op1);
+  if (debug) printf("4) op2=%s\n", op2);
 
   fix_if_djnzjr(opcname,op1,op2);
 
