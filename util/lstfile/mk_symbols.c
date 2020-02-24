@@ -291,7 +291,7 @@ void fix_if_djnzjr(char *opcname,char *op1,char *op2)
 }
 
 void parse_line(char* linebuff, char* labelname, char* opcname,
-	       char* op1, char* op2)
+		char* op1, char* op2, char** rest)
 {
 
   char *pek=linebuff;
@@ -307,6 +307,9 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
   
   pek=move_to_nonws(pek);
 
+  // Used for pseudo ops, they parse this string as arguments
+  *rest = pek;
+  
   pek=copy_to_spc_or_comma(op1, pek);
   
   pek=move_to_nonws(pek);

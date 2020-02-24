@@ -5,7 +5,7 @@
 
 #include "mk_symbols.h"
 
-static const int debug=1;
+static const int debug=0;
 
 // To be parsed from opcodes.lst
 static char opc[2000][100];
@@ -51,6 +51,8 @@ int main()
   int lim = i;
 
   char linebuf[1024];
+
+  int dollar_pc=0;
   
   while (!feof(stdin))
     {
@@ -87,8 +89,17 @@ int main()
 	    }
 	}
 
-      parse_line(linebuf, labelname, opcname, op1, op2);
+      char *rest;
+      parse_line(linebuf, labelname, opcname, op1, op2, &rest);
 
+      // First check for pseudo directive at label (column 0)
+      if (0==strcmp(labelname, ".org"))
+	{
+	  // TODO: Check symbol numeric values (for opcode position)
+	  sscanf(opcname, "%x", &dollar_pc);
+	  continue;
+	}
+      
       // These lenghts are without spaces and with numbers converted to "X"
       int labellen=strlen(labelname);
       int opcnamelen=strlen(opcname);
@@ -129,6 +140,8 @@ int main()
 
 	  int bufflen=strlen(buff);
 	  
+	  int found=0;
+	  
 	  // Search all >1000 entries for each line, we are not yet at collapse :-)
 	  for (i=0;i<lim;i++)
 	    {
@@ -136,12 +149,61 @@ int main()
 	      if (0==strncmp(buff, &opc[i][11], bufflen))
 		{
 		  int n = calc_score(opc[i]);
+		  dollar_pc += n;
 		  if (debug) printf("i match=%d, str=%s # bytes: %d\n",
 				    i, buff, n);
+		  found = 1;
 		  break;
 		}
 	    }
+	  
+	  if (!found)
+	    {
+	      // Check pseudo ops
+
+	      // We have at least one item
+	      int n=1;
+	      
+	      if (0==strcmp(".DB", opcname) || 0==strcmp(".DW", opcname))
+		{
+		  int ix=0;
+
+		  int state = 0;
+		  
+		  while (1)
+		    {
+		      if (rest[ix]=='\0') break;
+		      if (state == 0 && rest[ix]==',')
+			{
+			  n++;
+			}
+		      else if (state == 0 && rest[ix]=='"')
+			{
+			  // Start quote
+			  state = 1;
+			}
+		      else if (state == 1 && rest[ix]=='"')
+			{
+			  state = 0;
+			  n--;
+			  // End quote
+			}
+		      else if (state == 1)
+			{
+			  n++;
+			}
+		      ix++;
+		    }
+		  // Double up on bytes?
+		  if (0==strcmp(".DW", opcname))
+		    {
+		      n *= 2;
+		    }
+		  dollar_pc += n;
+		}
+	    }
+	    
 	}
     }
-  
+  printf("$=%x\n", dollar_pc);
 }

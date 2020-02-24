@@ -118,7 +118,9 @@ void run_test(int subst)
 	    }
 	}
 
-      parse_line(linebuf, labelname, opcname, op1, op2);
+      // Pseudo ops not used in this test
+      char *dummy;
+      parse_line(linebuf, labelname, opcname, op1, op2, &dummy);
       
       // These lenghts are without spaces and with numbers converted to "X"
       int labellen=strlen(labelname);

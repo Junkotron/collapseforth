@@ -7,7 +7,7 @@
 int is_weird(char* opc, char* op1, char* op2);
 
 void parse_line(char* linebuff, char* labelname, char* opcname,
-		       char* op1, char* op2);
+		char* op1, char* op2, char** rest);
 
 
 #endif

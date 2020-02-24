@@ -2,7 +2,8 @@
 
 ; At hex 4200 normally
 ;.org USER_CODE
-
+.org 4200
+	
         jp start
 
 .dbg:
@@ -143,13 +144,13 @@ forthretcodedbg:
 	ret
 
 evalJmpTable:
-;	.dw evalPrimitive
-;	.dw evalSofist ; A non-primitive routine is of course "sofisticated" :-)
+	.dw evalPrimitive
+	.dw evalSofist ; A non-primitive routine is of course "sofisticated" :-)
 
 
 sBanner:
-;	.db	"Welcome to Collapse Forth...", 0
+	.db	"Welcome to Collapse Forth...", 0
 sOK:
-;	.db	0x0d, 0x0a, "OK", 0x0d, 0x0a, 0
+	.db	0x0d, 0x0a, "OK", 0x0d, 0x0a, 0
 sNotFound:
-;	.db	0x0d, 0x0a, "Word not found!", 0
+	.db	0x0d, 0x0a, "Word not found!", 0
