@@ -104,11 +104,37 @@ int main()
       
       if (opcname[0] != '\0')
 	{
+	  char buff[1024];
+	  
+	  if (op1[0]!='\0')
+	    {
+	      if (op2[0]!='\0')
+		{
+		  sprintf(buff,"%s %s,%s",
+			  opcname,op1,op2);
+		}
+	      else
+		{
+		  sprintf(buff,"%s %s",
+			  opcname,op1);
+
+		}
+	    }
+	  else
+	    {
+	      sprintf(buff,"%s",
+		      opcname);
+	    }
+	  printf("buff=%s\n",
+		 buff
+		 );
+
+	  int bufflen=strlen(buff);
 	  
 	  // Search all >1000 entries for each line, we are not yet at collapse :-)
 	  for (i=0;i<lim;i++)
 	    {
-	      if (0==strncmp(opcname, &opc[i][11], opcnamelen))
+	      if (0==strncmp(opcname, &opc[i][11], bufflen))
 		{
 		  // Match?
 		  if (debug) printf("i match=%d, str=%s\n", i, &opc[i][11]);

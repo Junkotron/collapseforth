@@ -34,7 +34,48 @@ static void trim(char* str)
     }
 }
 
-int main()
+// replace nn into numbers
+void replace_num(char *arg)
+{
+  if (0==strcmp(arg,"nn"))
+    {
+      sprintf(arg, "4711");
+      return;
+    }
+  if (0==strcmp(arg,"(nn)"))
+    {
+      sprintf(arg, "(4711)");
+      return;
+    }
+  if (0==strcmp(arg,"n"))
+    {
+      sprintf(arg, "42");
+      return;
+    }
+  if (0==strcmp(arg,"(n)"))
+    {
+      sprintf(arg, "(42)");
+      return;
+    }
+  if (0==strcmp(arg,"PC+e"))
+    {
+      sprintf(arg, "123");
+      return;
+    }
+  if (0==strcmp(arg,"(IX+d)"))
+    {
+      sprintf(arg, "(IX-42)");
+      return;
+    }
+  if (0==strcmp(arg,"(IY+d)"))
+    {
+      sprintf(arg, "(IY+42)");
+      return;
+    }
+  
+}
+
+void run_test(int subst)
 {
   FILE* opcf = fopen("opcodes.lst", "r");
 
@@ -66,8 +107,19 @@ int main()
       op1[0]='\0';
       op2[0]='\0';
             
-      parse_line(linebuf, labelname, opcname, op1, op2);
 
+      // replace nn etc. with numbers
+      if (subst)
+	{
+	  if (!is_weird(opcname, op1, op2))
+	    {
+	      replace_num(op1);
+	      replace_num(op2);
+	    }
+	}
+
+      parse_line(linebuf, labelname, opcname, op1, op2);
+      
       // These lenghts are without spaces and with numbers converted to "X"
       int labellen=strlen(labelname);
       int opcnamelen=strlen(opcname);
@@ -116,7 +168,14 @@ int main()
       if (strcmp(b2, orig))
 	{
 	  printf("Test Failed: >>>%s<<< original= >>>%s<<<\n", b2, orig);
+	  exit(1);
 	}
 
     }
+}
+
+int main()
+{
+  run_test(0);
+  run_test(1);
 }
