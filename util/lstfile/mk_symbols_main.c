@@ -125,19 +125,19 @@ int main()
 	      sprintf(buff,"%s",
 		      opcname);
 	    }
-	  printf("buff=%s\n",
-		 buff
-		 );
+	  if (debug) printf("buff=%s\n", buff);
 
 	  int bufflen=strlen(buff);
 	  
 	  // Search all >1000 entries for each line, we are not yet at collapse :-)
 	  for (i=0;i<lim;i++)
 	    {
-	      if (0==strncmp(opcname, &opc[i][11], bufflen))
+	      // Match?
+	      if (0==strncmp(buff, &opc[i][11], bufflen))
 		{
-		  // Match?
-		  if (debug) printf("i match=%d, str=%s\n", i, &opc[i][11]);
+		  int n = calc_score(opc[i]);
+		  if (debug) printf("i match=%d, str=%s # bytes: %d\n",
+				    i, buff, n);
 		  break;
 		}
 	    }
