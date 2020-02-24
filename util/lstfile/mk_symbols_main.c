@@ -5,7 +5,7 @@
 
 #include "mk_symbols.h"
 
-static const int debug=0;
+static const int debug=1;
 
 // To be parsed from opcodes.lst
 static char opc[2000][100];
