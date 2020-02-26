@@ -1,14 +1,18 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 #include "mk_symbols.h"
 
-static const int debug=1;
+static const int debug=0;
 
 // To be parsed from opcodes.lst
 static char opc[2000][100];
+
+// How far to go in opc vector
+static int lim=0;
 
 static int calc_score(char* linebuff)
 {
@@ -36,50 +40,24 @@ static int calc_score(char* linebuff)
 }
 
 
-int main()
+// May be called recursively by the ".inc" pseudo
+int read_file(const char* filename, int dollar_pc)
 {
-  FILE* opcf = fopen("opcodes.lst", "r");
+  printf("entering read_file $pc=%x\n", dollar_pc);
 
-  int i=0;
-
-  // Add some corrections call (nn) => call nn
-  // ld hl,(nn) not with the ED opcode
-  sprintf(opc[i++], "CD nn      CALL (nn)\r\n");
-  sprintf(opc[i++], "DC nn      CALL C,(nn)\r\n");
-  sprintf(opc[i++], "FC nn      CALL M,(nn)\r\n");
-  sprintf(opc[i++], "D4 nn      CALL NC,(nn)\r\n");
-  sprintf(opc[i++], "C4 nn      CALL NZ,(nn)\r\n");
-  sprintf(opc[i++], "F4 nn      CALL P,(nn)\r\n");
-  sprintf(opc[i++], "EC nn      CALL PE,(nn)\r\n");
-  sprintf(opc[i++], "E4 nn      CALL PO,(nn)\r\n");
-  sprintf(opc[i++], "CC nn      CALL Z,(nn)\r\n");
-
-  sprintf(opc[i++], "C3 nn      JP (nn)\r\n");
-  sprintf(opc[i++], "DA nn      JP C,(nn)\r\n");
-  sprintf(opc[i++], "FA nn      JP M,(nn)\r\n");
-  sprintf(opc[i++], "D2 nn      JP NC,(nn)\r\n");
-  sprintf(opc[i++], "C2 nn      JP NZ,(nn)\r\n");
-  sprintf(opc[i++], "F2 nn      JP P,(nn)\r\n");
-  sprintf(opc[i++], "EA nn      JP PE,(nn)\r\n");
-  sprintf(opc[i++], "E2 nn      JP PO,(nn)\r\n");
-  sprintf(opc[i++], "CA nn      JP Z,(nn)\r\n");
-  sprintf(opc[i++], "2A nn      LD HL,(nn)\r\n");
   
-  while (!feof(opcf))
-    {
-      fgets(opc[i], 100, opcf);
-      i++;
-    }
-
-  int lim = i;
-
   char linebuf[1024];
 
-  int dollar_pc=0;
-  
-  while (!feof(stdin))
+  FILE* file=fopen(filename, "r");
+  if (file==NULL)
     {
-      fgets(linebuf, 1024, stdin);
+      fprintf(stderr, "File: >>%s<< could not be opened\n", filename);
+      exit(1);
+    }
+  
+  while (!feof(file))
+    {
+      fgets(linebuf, 1024, file);
       
       char labelname[100];
       char opcname[100];
@@ -115,12 +93,43 @@ int main()
       char *rest;
       parse_line(linebuf, labelname, opcname, op1, op2, &rest);
 
+      if (0==strcmp(labelname, "theend:"))
+	{
+	  printf("The end is at hand (%x)\n", dollar_pc);
+	}
+      
       // First check for pseudo directive at label (column 0)
       if (0==strcmp(labelname, ".org"))
 	{
 	  // TODO: Check symbol numeric values (for opcode position)
 	  sscanf(opcname, "%x", &dollar_pc);
 	  continue;
+	}
+      
+      if (0==strcmp(labelname, ".inc"))
+	{
+	  // Remove fnutts, ""
+	  char newfname[1024];
+	  int newi=0;
+	  for (i=0;;i++)
+	    {
+	      if (linebuf[i+5]=='\0')
+		{
+		  newfname[newi++]=linebuf[i+5];
+		  break;
+		}
+	      if ((linebuf[i+5]=='\n') ||
+		  (linebuf[i+5]=='\r') ||
+		  (linebuf[i+5]=='\t'))
+		{
+		  newfname[newi++]='\0';
+		  break;
+		}
+	      if (linebuf[i+5]!='"') newfname[newi++]=linebuf[i+5];
+	    }
+	  
+	  dollar_pc=read_file(newfname, dollar_pc);
+	  printf("got back (rec) $pc=%x\n", dollar_pc);
 	}
       
       // These lenghts are without spaces and with numbers converted to "X"
@@ -228,5 +237,63 @@ int main()
 	    
 	}
     }
+
+  printf("Returning $pc=%x\n", dollar_pc);
+  return dollar_pc;
+}
+
+
+int main(int argc, char* argv[])
+{
+  FILE* opcf = fopen("opcodes.lst", "r");
+
+  int dollar_pc=0;
+  int i=0;
+
+  // Add some corrections call (nn) => call nn
+  // ld hl,(nn) not with the ED opcode
+  // TODO: This wont work if we are going to search via intervall halving
+  // then the old JP and CALL has to be replaced and the ED LD version
+  // removed
+  sprintf(opc[i++], "CD nn      CALL nn\r\n");
+  sprintf(opc[i++], "DC nn      CALL C,nn\r\n");
+  sprintf(opc[i++], "FC nn      CALL M,nn\r\n");
+  sprintf(opc[i++], "D4 nn      CALL NC,nn\r\n");
+  sprintf(opc[i++], "C4 nn      CALL NZ,nn\r\n");
+  sprintf(opc[i++], "F4 nn      CALL P,nn\r\n");
+  sprintf(opc[i++], "EC nn      CALL PE,nn\r\n");
+  sprintf(opc[i++], "E4 nn      CALL PO,nn\r\n");
+  sprintf(opc[i++], "CC nn      CALL Z,nn\r\n");
+
+  sprintf(opc[i++], "C3 nn      JP nn\r\n");
+  sprintf(opc[i++], "DA nn      JP C,nn\r\n");
+  sprintf(opc[i++], "FA nn      JP M,nn\r\n");
+  sprintf(opc[i++], "D2 nn      JP NC,nn\r\n");
+  sprintf(opc[i++], "C2 nn      JP NZ,nn\r\n");
+  sprintf(opc[i++], "F2 nn      JP P,nn\r\n");
+  sprintf(opc[i++], "EA nn      JP PE,nn\r\n");
+  sprintf(opc[i++], "E2 nn      JP PO,nn\r\n");
+  sprintf(opc[i++], "CA nn      JP Z,nn\r\n");
+  sprintf(opc[i++], "2A nn      LD HL,nn\r\n");
+  
+  while (!feof(opcf))
+    {
+      fgets(opc[i], 100, opcf);
+      i++;
+    }
+
+  lim = i;
+  
+  if (argc==2)
+    {
+      dollar_pc=read_file(argv[1], dollar_pc);
+      printf("got back $pc=%x\n", dollar_pc);
+    }
+  else
+    {
+      fprintf(stderr, "Usage: %s <assembler file>\n", argv[0]);
+      exit(1);
+    }
+  
   printf("$=%x\n", dollar_pc);
 }
