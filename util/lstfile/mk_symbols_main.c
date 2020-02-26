@@ -41,6 +41,29 @@ int main()
   FILE* opcf = fopen("opcodes.lst", "r");
 
   int i=0;
+
+  // Add some corrections call (nn) => call nn
+  // ld hl,(nn) not with the ED opcode
+  sprintf(opc[i++], "CD nn      CALL (nn)\r\n");
+  sprintf(opc[i++], "DC nn      CALL C,(nn)\r\n");
+  sprintf(opc[i++], "FC nn      CALL M,(nn)\r\n");
+  sprintf(opc[i++], "D4 nn      CALL NC,(nn)\r\n");
+  sprintf(opc[i++], "C4 nn      CALL NZ,(nn)\r\n");
+  sprintf(opc[i++], "F4 nn      CALL P,(nn)\r\n");
+  sprintf(opc[i++], "EC nn      CALL PE,(nn)\r\n");
+  sprintf(opc[i++], "E4 nn      CALL PO,(nn)\r\n");
+  sprintf(opc[i++], "CC nn      CALL Z,(nn)\r\n");
+
+  sprintf(opc[i++], "C3 nn      JP (nn)\r\n");
+  sprintf(opc[i++], "DA nn      JP C,(nn)\r\n");
+  sprintf(opc[i++], "FA nn      JP M,(nn)\r\n");
+  sprintf(opc[i++], "D2 nn      JP NC,(nn)\r\n");
+  sprintf(opc[i++], "C2 nn      JP NZ,(nn)\r\n");
+  sprintf(opc[i++], "F2 nn      JP P,(nn)\r\n");
+  sprintf(opc[i++], "EA nn      JP PE,(nn)\r\n");
+  sprintf(opc[i++], "E2 nn      JP PO,(nn)\r\n");
+  sprintf(opc[i++], "CA nn      JP Z,(nn)\r\n");
+  sprintf(opc[i++], "2A nn      LD HL,(nn)\r\n");
   
   while (!feof(opcf))
     {

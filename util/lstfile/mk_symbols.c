@@ -7,8 +7,6 @@
 
 static const int debug=0;
 
-// To be parsed from opcodes.lst
-static char opc[2000][100];
 
 
 int is_ws(char ch)
