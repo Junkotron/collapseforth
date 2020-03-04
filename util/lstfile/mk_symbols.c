@@ -5,7 +5,7 @@
 
 #include "mk_symbols.h"
 
-static const int debug=0;
+static const int debug=1;
 
 
 
@@ -18,7 +18,7 @@ int is_ws(char ch)
 	   (ch=='\r') ||
 	   (ch=='\0')
 	   );
-  }
+}
 
 int is_ws_or_comma(char ch)
 {
@@ -154,7 +154,12 @@ int is_c_nc_z_nz(char* flag)
   return is_any_of(flag, z_c_flag);
 }
 
-
+int is_flags(char* flag)
+{
+  static const char* allflags[] = { "C", "NC", "Z", "NZ", "P", "M", "PO", "PE", ""};
+  return is_any_of(flag, allflags);
+}
+  
 int is_not_reg8(char* id)
 {
   static const char* regs[] =
@@ -336,15 +341,71 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
   // Now lets do some special conversions, first turn any op begining
   // with (IX/IY... into (IX/IY+d)
 
-  if (strcmp("JP",opcname))
+  if (strcmp("JP",opcname) &&
+      strcmp("CALL",opcname))
     {
+      // All mnems but JP and CALL should
+      // run this stage
       convert_if_index(op1);
       convert_if_index(op2);
     }
   else
     {
+      // Handles cases of (addr)
       convert_if_pos_n_or_nn(op1, opcname);
       convert_if_pos_n_or_nn(op2, opcname);
+      
+      if (!strcmp("JP",opcname))
+	{
+	  // check for IX/IY
+	  if (!strcmp("(I",op1))
+	    {
+	      // does not have the +d
+	      // and no conditional so
+	      // always in op1
+	      op1[3]=')';
+	      op1[4]='\0';
+	    }
+	  else if (op1[0] == '(')
+	    {
+	    }
+	  else if (is_flags(op1))
+	    {
+	      if (op2[0] == '(')
+		{
+		}
+	      else
+		{
+		  strcpy(op2, "nn");
+		}
+	    }
+	  else
+	    {
+	      strcpy(op1, "nn");
+	    }
+	}
+      else if (!strcmp("CALL",opcname))
+	{
+	  if (is_flags(op1))
+	    {
+	      if (op2[0] == '(')
+		{
+		}
+	      else
+		{
+		  strcpy(op2, "nn");
+		}
+	    }
+	  else if (op1[0] == '(')
+	    {
+	    }
+	  else
+	    {
+	      strcpy(op1, "nn");
+	    }
+	}
+      
+      
       return;
     }
 
