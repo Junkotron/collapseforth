@@ -2,10 +2,11 @@
 #include "dbg.h"
 #include "dis.h"
 #include "emul.h"
-
+#include <termios.h>
 
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_BP 100
 
@@ -75,6 +76,16 @@ static void run_prompt_once(Machine *m)
   printf("Prompt> ");
   fflush(stdout);
 
+  struct termios termInfo;
+  if (tcgetattr(0, &termInfo) == -1) {
+    fprintf(stderr, "tcgetattr failed\n");
+    exit(1);
+  }
+  
+  termInfo.c_lflag |= ECHO;
+  termInfo.c_lflag |= ICANON;
+  tcsetattr(0, TCSAFLUSH, &termInfo);
+
   for (i=0;i<1023;i++)
     {
       buf[i]=getchar();
@@ -82,10 +93,14 @@ static void run_prompt_once(Machine *m)
       if (buf[i]=='\n') break;
       putchar(buf[i]);
     }
-
+  
   putchar('\n');
   buf[i]='\0';
 
+  termInfo.c_lflag &= ~ECHO;
+  termInfo.c_lflag &= ~ICANON;
+  tcsetattr(0, TCSAFLUSH, &termInfo);
+  
   switch(buf[0])
     {
     case 'h':
