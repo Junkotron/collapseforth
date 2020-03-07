@@ -6,7 +6,7 @@
 
 #include "mk_symbols.h"
 
-static const int debug=0;
+static const int debug=1;
 
 // To be parsed from opcodes.lst
 static char opc[2000][100];
@@ -43,9 +43,6 @@ static int calc_score(char* linebuff)
 // May be called recursively by the ".inc" pseudo
 int read_file(const char* filename, int dollar_pc)
 {
-  printf("entering read_file $pc=%x\n", dollar_pc);
-
-  
   char linebuf[1024];
 
   FILE* file=fopen(filename, "r");
@@ -95,6 +92,7 @@ int read_file(const char* filename, int dollar_pc)
 
       if (0==strcmp(labelname, "theend:"))
 	{
+	  // TODO: until we get actual symbol table
 	  printf("The end is at hand (%x)\n", dollar_pc);
 	}
       
@@ -103,6 +101,8 @@ int read_file(const char* filename, int dollar_pc)
 	{
 	  // TODO: Check symbol numeric values (for opcode position)
 	  sscanf(opcname, "%x", &dollar_pc);
+	  printf("Warning TODO setting org to 4200 (hard coded) please change this when implementing labels!\n");
+	  dollar_pc=0x4200;
 	  continue;
 	}
       
@@ -129,7 +129,6 @@ int read_file(const char* filename, int dollar_pc)
 	    }
 	  
 	  dollar_pc=read_file(newfname, dollar_pc);
-	  printf("got back (rec) $pc=%x\n", dollar_pc);
 	}
       
       // These lenghts are without spaces and with numbers converted to "X"
@@ -238,7 +237,6 @@ int read_file(const char* filename, int dollar_pc)
 	}
     }
 
-  printf("Returning $pc=%x\n", dollar_pc);
   return dollar_pc;
 }
 
@@ -287,7 +285,6 @@ int main(int argc, char* argv[])
   if (argc==2)
     {
       dollar_pc=read_file(argv[1], dollar_pc);
-      printf("got back $pc=%x\n", dollar_pc);
     }
   else
     {

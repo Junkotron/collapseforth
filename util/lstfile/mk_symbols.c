@@ -5,7 +5,7 @@
 
 #include "mk_symbols.h"
 
-static const int debug=1;
+static const int debug=0;
 
 
 
@@ -258,7 +258,19 @@ void convert_if_numeral(char* op1, char* op2, char* opcname)
   if (strcmp(opcname, "LD")) return;
 
   // Anything pos (xx) already handled
-  if (op1[0]=='(') return;
+  if (op1[0]=='(')
+    {
+      // except immediate load for some
+      const char * immix[]={"(IX+d)", "(IY+d)", "(HL)", "" };
+
+      if (is_any_of(op1, immix))
+	  if (!is_any_of(op2, nreg))
+	    {
+	      sprintf(op2, "n");
+	    }
+      
+      return;
+    }
   if (op2[0]=='(') return;
 
   // no changes if any op is (nn)
@@ -271,7 +283,7 @@ void convert_if_numeral(char* op1, char* op2, char* opcname)
 	{
 	  sprintf(op2, "nn");
 	}
-	  return;      
+      return;      
     }
   
   if (!is_any_of(op2, nreg))
