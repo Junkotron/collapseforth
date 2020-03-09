@@ -344,6 +344,13 @@ void parse_line(char* linebuff, char* labelname, char* opcname,
       op2="";
       return;
     }
+
+  const char *pseudos[]={".equ", ".org", ".inc", "", };
+  // check if pseudo op, dont upcase
+  if (is_any_of(labelname, pseudos))
+    {
+      return;
+    }
   
   // Convert mnem and operands to upper case, labels are kept case-sensitive
   convert_to_upper_ifnotn(opcname);

@@ -1,4 +1,6 @@
 
+#include "store.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,13 +8,17 @@
 
 #include "mk_symbols.h"
 
-static const int debug=1;
+static const int debug=0;
 
 // To be parsed from opcodes.lst
+
 static char opc[2000][100];
 
 // How far to go in opc vector
 static int lim=0;
+
+static int latest_equ=0; // used with @ construct
+
 
 static int calc_score(char* linebuff)
 {
@@ -90,20 +96,34 @@ int read_file(const char* filename, int dollar_pc)
       char *rest;
       parse_line(linebuf, labelname, opcname, op1, op2, &rest);
 
-      if (0==strcmp(labelname, "theend:"))
+      if (0==strcmp(labelname, ".equ"))
 	{
-	  // TODO: until we get actual symbol table
-	  printf("The end is at hand (%x)\n", dollar_pc);
+	  int x;
+	  sscanf(op1,"%x",&x);
+	  if (op1[0]=='@')
+	    {
+	      latest_equ+=x;
+	      store_insert(opcname, latest_equ);
+	    }
+	  else
+	    {
+	      store_insert(opcname, x);
+	    }
+	  continue;
 	}
       
       // First check for pseudo directive at label (column 0)
       if (0==strcmp(labelname, ".org"))
 	{
-	  // TODO: Check symbol numeric values (for opcode position)
-	  sscanf(opcname, "%x", &dollar_pc);
-	  printf("Warning TODO setting org to 4200 (hard coded) please change this when implementing labels!\n");
-	  dollar_pc=0x4200;
-	  continue;
+	  if (isdigit(opcname[0]))
+	    {
+	      sscanf(opcname, "%x", &dollar_pc);
+	    }
+	  else
+	    {
+	      dollar_pc=store_search(opcname);
+	    }
+	  continue;	  
 	}
       
       if (0==strcmp(labelname, ".inc"))
@@ -129,8 +149,18 @@ int read_file(const char* filename, int dollar_pc)
 	    }
 	  
 	  dollar_pc=read_file(newfname, dollar_pc);
+	  continue;
 	}
-      
+
+      // Finally we output the labels
+      // according to either the current pc
+      // or .equ directive but only if
+      // label exists for this line
+      if (strlen(labelname)!=0)
+	{
+	  printf("%s %x\n", labelname, dollar_pc);
+	}
+
       // These lenghts are without spaces and with numbers converted to "X"
       int labellen=strlen(labelname);
       int opcnamelen=strlen(opcname);
@@ -245,6 +275,8 @@ int main(int argc, char* argv[])
 {
   FILE* opcf = fopen("opcodes.lst", "r");
 
+  store_init();
+  
   int dollar_pc=0;
   int i=0;
 
@@ -291,6 +323,9 @@ int main(int argc, char* argv[])
       fprintf(stderr, "Usage: %s <assembler file>\n", argv[0]);
       exit(1);
     }
+
+  store_printall();
   
+  store_destroy();  
   printf("$=%x\n", dollar_pc);
 }
