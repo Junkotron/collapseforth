@@ -58,9 +58,11 @@ int read_file(const char* filename, int dollar_pc)
       exit(1);
     }
   
-  while (!feof(file))
+  while (1)
     {
       fgets(linebuf, 1024, file);
+
+      if (feof(file)) break;
       
       char labelname[100];
       char opcname[100];
@@ -306,9 +308,11 @@ int main(int argc, char* argv[])
   sprintf(opc[i++], "CA nn      JP Z,nn\r\n");
   sprintf(opc[i++], "2A nn      LD HL,nn\r\n");
   
-  while (!feof(opcf))
+  while (1)
     {
       fgets(opc[i], 100, opcf);
+      if (feof(opcf)) break;
+      fprintf(stderr, "opci=%s\n", opc[i]);
       i++;
     }
 
